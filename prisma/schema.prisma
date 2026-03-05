@@ -29,5 +29,7 @@ model User {
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
   @@unique([provider, providerId], map: "users_provider_provider_id_key")
+  @@index([email], map: "users_email_idx")
+  @@index([provider], map: "users_provider_idx")
   @@map("users")
 }
