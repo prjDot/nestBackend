@@ -22,13 +22,8 @@
 pnpm install
 ```
 
-### Environment Variables
-```env
-# Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-```
+### Required Environment Variables
+- `REDIS_URL`
 
 ### Build
 ```bash
