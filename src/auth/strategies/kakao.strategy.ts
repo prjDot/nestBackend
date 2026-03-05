@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import type { KakaoProfile } from 'passport-kakao';
+import type { KakaoProfile, StrategyOptions } from 'passport-kakao';
 import { Strategy } from 'passport-kakao';
 import { AuthService } from '../auth.service';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
+  private static readonly logger = new Logger(KakaoStrategy.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly authService: AuthService
@@ -14,7 +16,13 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     const clientID =
       configService.get<string>('KAKAO_REST_API_KEY') ??
       configService.get<string>('KAKAO_CLIENT_ID');
+    const clientSecret =
+      configService.get<string>('KAKAO_CLIENT_SECRET_KEY') ??
+      configService.get<string>('KAKAO_CLIENT_SECRET') ??
+      configService.get<string>('KAKAO_CLIENT_SECRE_KEY') ??
+      configService.get<string>('KAKAO_CLIENT_SECRE');
     const callbackURL = resolveCallbackUrl(configService);
+    const explicitCallbackUrl = configService.get<string>('KAKAO_CALLBACK_URL');
 
     if (!clientID) {
       throw new Error(
@@ -22,12 +30,24 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
       );
     }
 
-    super({
+    const strategyOptions: StrategyOptions = {
       clientID,
       callbackURL,
       // profile_nickname/account_email are required; profile_image is optional consent.
       scope: ['profile_nickname', 'account_email', 'profile_image']
-    });
+    };
+
+    if (clientSecret) {
+      strategyOptions.clientSecret = clientSecret;
+    }
+
+    super(strategyOptions);
+
+    if (!explicitCallbackUrl) {
+      KakaoStrategy.logger.warn(
+        `KAKAO_CALLBACK_URL is not set. Using fallback callback URL: ${callbackURL}`
+      );
+    }
   }
 
   validate(

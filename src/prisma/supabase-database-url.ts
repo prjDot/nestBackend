@@ -7,16 +7,25 @@ interface SupabaseDbConfig {
 export function resolveSupabaseDatabaseConfig(
   configService: ConfigService
 ): SupabaseDbConfig {
-  const databaseUrlFromEnv = configService.get<string>('DATABASE_URL');
-
-  if (databaseUrlFromEnv) {
+  const explicitDatabaseUrl = configService.get<string>('DATABASE_URL');
+  if (explicitDatabaseUrl) {
     return {
-      databaseUrl: databaseUrlFromEnv
+      databaseUrl: explicitDatabaseUrl
     };
   }
 
-  const projectUrl = configService.get<string>('SUPADB_PROJECT_URL');
-  const publishableKey = configService.get<string>('SUPADB_PUBLISHABLE_KEY');
+  const projectUrl =
+    configService.get<string>('PROJECT_URL') ??
+    configService.get<string>('SUPABASE_URL') ??
+    configService.get<string>('SUPABASE_PROJECT_URL') ??
+    configService.get<string>('SUPADB_PROJECT_URL');
+  const publishableKey =
+    configService.get<string>('DATABASE_PUBLISHABLE_KEY') ??
+    configService.get<string>('DATABASE_PUBLISHABLE KEY') ??
+    configService.get<string>('SUPABASE_KEY') ??
+    configService.get<string>('SUPABASE_PUBLISHABLE_KEY') ??
+    configService.get<string>('SUPADB_PUBLISHABLE_KEY') ??
+    configService.get<string>('ANON_KEY');
   const dbPassword =
     configService.get<string>('DATABSE_PASSWD_KEY') ??
     configService.get<string>('DATABASE_PASSWD_KEY') ??
@@ -25,7 +34,7 @@ export function resolveSupabaseDatabaseConfig(
 
   if (!projectUrl || !publishableKey || !dbPassword) {
     throw new Error(
-      'DATABASE_URL or (SUPADB_PROJECT_URL, SUPADB_PUBLISHABLE_KEY, DATABSE_PASSWD_KEY) must be configured.'
+      'DATABASE_URL or (PROJECT_URL, DATABASE_PUBLISHABLE_KEY, DATABSE_PASSWD_KEY) must be configured.'
     );
   }
 
@@ -109,7 +118,7 @@ function extractProjectRef(projectUrl: string): string {
   const projectRef = hostnameParts[0];
 
   if (!projectRef) {
-    throw new Error('SUPADB_PROJECT_URL is invalid.');
+    throw new Error('PROJECT_URL is invalid.');
   }
 
   return projectRef;

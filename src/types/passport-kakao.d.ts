@@ -10,6 +10,7 @@ declare module 'passport-kakao' {
 
   export interface StrategyOptions {
     clientID: string;
+    clientSecret?: string;
     callbackURL: string;
     scope?: string[];
     passReqToCallback?: false;

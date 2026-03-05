@@ -10,8 +10,9 @@
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET_KEY`
 - `KAKAO_REST_API_KEY`
-- `SUPADB_PROJECT_URL`
-- `SUPADB_PUBLISHABLE_KEY`
+- `KAKAO_CLIENT_SECRET_KEY` (optional, required when Kakao client secret is enabled)
+- `SUPABASE_URL`
+- `SUPABASE_KEY` (Publishable Key)
 - `DATABSE_PASSWD_KEY` (Supabase DB password)
 - `SUPADB_CONNECTION_MODE` (optional, default: `pooler`)
 - `SUPADB_REGION` (optional, default: `ap-northeast-2`)
@@ -25,7 +26,7 @@
 ```bash
 pnpm install
 pnpm prisma:generate
-pnpm prisma:push
+npx prisma db push
 pnpm run lint
 pnpm run check
 pnpm run build
