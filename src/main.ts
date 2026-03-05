@@ -35,7 +35,7 @@ async function bootstrap(): Promise<void> {
     new HttpLoggingInterceptor(logger),
     new ApiResponseInterceptor()
   );
-  app.useGlobalFilters(new ApiExceptionFilter());
+  app.useGlobalFilters(new ApiExceptionFilter(logger));
 
   setupSwagger(app);
 

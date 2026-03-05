@@ -8,7 +8,7 @@ import type { RequestWithContext } from '../../common/types/request-with-context
 import { resolvePassportFailureDetail } from '../utils/passport-failure.util';
 
 @Injectable()
-export class GoogleAuthGuard extends AuthGuard('google') {
+export class KakaoAuthGuard extends AuthGuard('kakao') {
   handleRequest<TUser = unknown>(
     err: unknown,
     user: TUser,
@@ -20,7 +20,7 @@ export class GoogleAuthGuard extends AuthGuard('google') {
       const failureDetail = resolvePassportFailureDetail(err, info);
       throw new UnauthorizedException({
         code: 'UNAUTHORIZED',
-        message: 'Google 인증에 실패했습니다',
+        message: 'Kakao 인증에 실패했습니다',
         detail: {
           requestId: request.requestId ?? 'req_unknown',
           reason: failureDetail.reason,

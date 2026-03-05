@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  GOOGLE
+  KAKAO
+}
+
+model User {
+  id            String       @id @default(uuid()) @db.Uuid // Essential
+  provider      AuthProvider //Google | Kakao
+  providerId    String       @map("provider_id") // Essential
+  email         String? // Essential
+  name          String // Essential
+  nickname      String?
+  givenName     String?      @map("given_name")
+  familyName    String?      @map("family_name")
+  picture       String? // Google Profile IMG | Kakao Profile IMG - Optional
+  locale        String?
+  emailVerified Boolean      @default(false) @map("email_verified")
+  profile       Json // Essential
+  lastLoginAt   DateTime     @default(now()) @map("last_login_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@unique([provider, providerId], map: "users_provider_provider_id_key")
+  @@map("users")
+}
