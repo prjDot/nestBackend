@@ -4,6 +4,7 @@
 
 - **Framework**: NestJS 10.4.16
 - **Cache**: Redis (ioredis)
+- **DB**: NeonDB
 - **API Documentation**: Swagger: http://localhost:3000/api/docs
 
 ## Features
@@ -51,7 +52,7 @@ pnpm run format
 - [ ] 알림 기능 (24시간 중복 방지)
 - [ ] 위시리스트 기능
 - [ ] 사용자 인증 시스템
-- [ ] Supabase PostgreSQL 통합
+- [ ] NeonDB PostgreSQL 통합
 - [ ] 히스토리 및 차트 데이터
 
 ## Development
