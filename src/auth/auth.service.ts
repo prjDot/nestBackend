@@ -134,10 +134,9 @@ export class AuthService {
       if (isPrismaConnectivityError(error)) {
         throw new ServiceUnavailableException({
           code: 'DATABASE_UNAVAILABLE',
-          message: '데이터베이스 연결에 실패했습니다. Supabase DB 연결 설정을 확인해주세요.',
+          message: '데이터베이스 연결에 실패했습니다. DATABASE_URL 및 DB 네트워크/TLS 설정을 확인해주세요.',
           detail: {
-            reason:
-              'Check SUPADB_CONNECTION_MODE / SUPADB_DB_HOST / SUPADB_DB_USER / DATABSE_PASSWD_KEY / SUPADB_SSL_MODE / SUPADB_USE_LIBPQ_COMPAT.'
+            reason: 'Check DATABASE_URL, database reachability, and TLS configuration.'
           }
         });
       }

@@ -7,13 +7,14 @@
 - Supabase PostgreSQL
 
 ## Required Env
+- `DATABASE_URL` (Neon/Supabase PostgreSQL connection string, recommended)
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET_KEY`
 - `KAKAO_REST_API_KEY`
 - `KAKAO_CLIENT_SECRET_KEY` (optional, required when Kakao client secret is enabled)
-- `SUPABASE_URL`
-- `SUPABASE_KEY` (Publishable Key)
-- `DATABSE_PASSWD_KEY` (Supabase DB password)
+- `SUPABASE_URL` (optional fallback)
+- `SUPABASE_KEY` (optional fallback, Publishable Key)
+- `DATABSE_PASSWD_KEY` (optional fallback, Supabase DB password)
 - `SUPADB_CONNECTION_MODE` (optional, default: `pooler`)
 - `SUPADB_REGION` (optional, default: `ap-northeast-2`)
 - `SUPADB_DB_HOST` (optional, explicit host override)
