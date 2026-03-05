@@ -1,5 +1,6 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Post, Req, UseGuards } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -9,6 +10,9 @@ import {
 import { ApiErrorResponseDto, ApiSuccessResponseDto } from '../common/dto/api-response.dto';
 import type { RequestWithContext } from '../common/types/request-with-context.interface';
 import { AuthService } from './auth.service';
+import { AuthTokenService } from './auth-token.service';
+import { CurrentUserId } from './decorators/current-user-id.decorator';
+import { BearerAuthGuard } from './guards/bearer-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { KakaoAuthGuard } from './guards/kakao-auth.guard';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
@@ -17,7 +21,10 @@ import type { SocialUser } from './interfaces/social-user.interface';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly authTokenService: AuthTokenService
+  ) {}
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
@@ -45,23 +52,26 @@ export class AuthController {
         status: 200,
         message: 'Google login successful',
         data: {
-          id: 'e79d41f7-b3af-4d88-b7f4-170ef16d5f2f',
-          provider: 'google',
-          providerId: '1122334455',
-          email: 'user@example.com',
-          name: 'Cap3 User',
-          nickname: 'cap3-user',
-          givenName: 'Cap3',
-          familyName: 'User',
-          picture: 'https://lh3.googleusercontent.com/a/profile-image',
-          locale: 'ko',
-          emailVerified: true,
-          profile: {
-            sub: '1122334455'
-          },
-          lastLoginAt: '2026-03-05T08:40:21Z',
-          createdAt: '2026-03-05T08:40:21Z',
-          updatedAt: '2026-03-05T08:40:21Z'
+          accessToken: 'eyJhbGciOi...cap3',
+          user: {
+            id: 'e79d41f7-b3af-4d88-b7f4-170ef16d5f2f',
+            provider: 'google',
+            providerId: '1122334455',
+            email: 'user@example.com',
+            name: 'Cap3 User',
+            nickname: 'cap3-user',
+            givenName: 'Cap3',
+            familyName: 'User',
+            picture: 'https://lh3.googleusercontent.com/a/profile-image',
+            locale: 'ko',
+            emailVerified: true,
+            profile: {
+              sub: '1122334455'
+            },
+            lastLoginAt: '2026-03-05T08:40:21Z',
+            createdAt: '2026-03-05T08:40:21Z',
+            updatedAt: '2026-03-05T08:40:21Z'
+          }
         },
         meta: {
           requestId: 'req_01hqx8m3f',
@@ -76,14 +86,18 @@ export class AuthController {
   })
   async googleCallback(@Req() req: RequestWithContext): Promise<{
     message: string;
-    data: AuthenticatedUser;
+    data: { accessToken: string; user: AuthenticatedUser };
   }> {
     const socialUser = req.user as SocialUser;
     const savedUser = await this.authService.saveSocialUser(socialUser);
+    const accessToken = this.authTokenService.issueToken(savedUser.id);
 
     return {
       message: 'Google login successful',
-      data: savedUser
+      data: {
+        accessToken,
+        user: savedUser
+      }
     };
   }
 
@@ -113,23 +127,26 @@ export class AuthController {
         status: 200,
         message: 'Kakao login successful',
         data: {
-          id: 'e79d41f7-b3af-4d88-b7f4-170ef16d5f2f',
-          provider: 'kakao',
-          providerId: '1234567890',
-          email: 'user@example.com',
-          name: '카카오 사용자',
-          nickname: '카카오닉네임',
-          givenName: null,
-          familyName: null,
-          picture: 'https://k.kakaocdn.net/dn/profile.jpg',
-          locale: 'ko',
-          emailVerified: true,
-          profile: {
-            id: 1234567890
-          },
-          lastLoginAt: '2026-03-05T08:40:21Z',
-          createdAt: '2026-03-05T08:40:21Z',
-          updatedAt: '2026-03-05T08:40:21Z'
+          accessToken: 'eyJhbGciOi...cap3',
+          user: {
+            id: 'e79d41f7-b3af-4d88-b7f4-170ef16d5f2f',
+            provider: 'kakao',
+            providerId: '1234567890',
+            email: 'user@example.com',
+            name: '카카오 사용자',
+            nickname: '카카오닉네임',
+            givenName: null,
+            familyName: null,
+            picture: 'https://k.kakaocdn.net/dn/profile.jpg',
+            locale: 'ko',
+            emailVerified: true,
+            profile: {
+              id: 1234567890
+            },
+            lastLoginAt: '2026-03-05T08:40:21Z',
+            createdAt: '2026-03-05T08:40:21Z',
+            updatedAt: '2026-03-05T08:40:21Z'
+          }
         },
         meta: {
           requestId: 'req_01hqx8m3f',
@@ -144,14 +161,57 @@ export class AuthController {
   })
   async kakaoCallback(@Req() req: RequestWithContext): Promise<{
     message: string;
-    data: AuthenticatedUser;
+    data: { accessToken: string; user: AuthenticatedUser };
   }> {
     const socialUser = req.user as SocialUser;
     const savedUser = await this.authService.saveSocialUser(socialUser);
+    const accessToken = this.authTokenService.issueToken(savedUser.id);
 
     return {
       message: 'Kakao login successful',
-      data: savedUser
+      data: {
+        accessToken,
+        user: savedUser
+      }
+    };
+  }
+
+  @Post('logout')
+  @UseGuards(BearerAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '로그아웃' })
+  @ApiOkResponse({
+    description: '로그아웃 성공',
+    type: ApiSuccessResponseDto
+  })
+  logout(): { message: string; data: null } {
+    return {
+      message: 'Logout successful',
+      data: null
+    };
+  }
+
+  @Delete('account')
+  @UseGuards(BearerAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '회원 탈퇴' })
+  @ApiOkResponse({
+    description: '계정 삭제 성공',
+    type: ApiSuccessResponseDto
+  })
+  @ApiUnauthorizedResponse({
+    description: '인증 실패',
+    type: ApiErrorResponseDto
+  })
+  async deleteAccount(@CurrentUserId() userId: string): Promise<{
+    message: string;
+    data: null;
+  }> {
+    await this.authService.deleteAccount(userId);
+
+    return {
+      message: 'Account deleted successfully',
+      data: null
     };
   }
 }

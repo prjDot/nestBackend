@@ -1,4 +1,8 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException
+} from '@nestjs/common';
 import type { Profile } from 'passport-google-oauth20';
 import type { AuthProvider, Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -138,6 +142,26 @@ export class AuthService {
           detail: {
             reason: 'Check DATABASE_URL, database reachability, and TLS configuration.'
           }
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    try {
+      await this.prismaService.user.delete({
+        where: {
+          id: userId
+        }
+      });
+    } catch (error) {
+      if (isPrismaNotFoundError(error)) {
+        throw new NotFoundException({
+          code: 'RESOURCE_NOT_FOUND',
+          message: '사용자를 찾을 수 없습니다',
+          detail: null
         });
       }
 
@@ -349,4 +373,13 @@ function isPrismaConnectivityError(error: unknown): boolean {
     error.message.includes('self-signed certificate in certificate chain') ||
     error.message.includes('certificate verify failed')
   );
+}
+
+function isPrismaNotFoundError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  return typeof maybeCode === 'string' && maybeCode === 'P2025';
 }
