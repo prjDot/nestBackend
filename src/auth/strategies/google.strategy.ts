@@ -6,6 +6,7 @@ import {
   Strategy,
   VerifyCallback
 } from 'passport-google-oauth20';
+import { resolveCallbackUrl } from '../../common/url/app-url.util';
 import { AuthService } from '../auth.service';
 
 @Injectable()
@@ -18,7 +19,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const clientSecret =
       configService.get<string>('GOOGLE_CLIENT_SECRET_KEY') ??
       configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const callbackURL = resolveCallbackUrl(configService);
+    const callbackURL = resolveCallbackUrl(
+      (key) => configService.get<string>(key),
+      'GOOGLE_CALLBACK_URL',
+      '/api/auth/google/callback'
+    );
 
     if (!clientID || !clientSecret) {
       throw new Error(
@@ -46,37 +51,5 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       refreshToken
     );
     done(null, user);
-  }
-}
-
-function resolveCallbackUrl(configService: ConfigService): string {
-  const explicitCallbackUrl = configService.get<string>('GOOGLE_CALLBACK_URL');
-
-  if (explicitCallbackUrl) {
-    return normalizeUrlPath(explicitCallbackUrl);
-  }
-
-  const port = configService.get<string>('PORT') ?? '8080';
-  const appBaseUrl =
-    configService.get<string>('APP_BASE_URL') ?? `http://localhost:${port}`;
-  const defaultCallbackUrl = `${trimTrailingSlash(appBaseUrl)}/api/auth/google/callback`;
-
-  return normalizeUrlPath(defaultCallbackUrl);
-}
-
-function trimTrailingSlash(input: string): string {
-  if (input.endsWith('/')) {
-    return input.slice(0, -1);
-  }
-  return input;
-}
-
-function normalizeUrlPath(input: string): string {
-  try {
-    const url = new URL(input);
-    url.pathname = url.pathname.replace(/\/{2,}/g, '/');
-    return url.toString();
-  } catch {
-    return input.replace(/([^:]\/)\/+/g, '$1');
   }
 }

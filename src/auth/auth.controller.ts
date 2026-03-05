@@ -1,9 +1,18 @@
-import { Controller, Delete, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  UseGuards
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnauthorizedResponse
 } from '@nestjs/swagger';
@@ -28,7 +37,11 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  @ApiOperation({ summary: 'Google 로그인 시작' })
+  @ApiOperation({
+    summary: 'Google 로그인 시작',
+    description:
+      '프론트엔드는 브라우저를 이 endpoint로 이동시켜 Google OAuth flow를 시작합니다.'
+  })
   @ApiFoundResponse({
     description: 'Google OAuth consent 화면으로 리다이렉트됩니다.'
   })
@@ -42,7 +55,11 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
-  @ApiOperation({ summary: 'Google 로그인 콜백' })
+  @ApiOperation({
+    summary: 'Google 로그인 콜백',
+    description:
+      'Google 인증 완료 후 provider가 호출하는 callback endpoint입니다. 직접 호출하지 말고 `/api/auth/google`으로 시작해야 합니다.'
+  })
   @ApiOkResponse({
     description: 'Google 로그인 성공',
     type: ApiSuccessResponseDto,
@@ -84,6 +101,10 @@ export class AuthController {
     description: 'Google 인증 실패',
     type: ApiErrorResponseDto
   })
+  @ApiServiceUnavailableResponse({
+    description: 'OAuth는 성공했지만 사용자 저장을 위한 DB 연결에 실패',
+    type: ApiErrorResponseDto
+  })
   async googleCallback(@Req() req: RequestWithContext): Promise<{
     message: string;
     data: { accessToken: string; user: AuthenticatedUser };
@@ -103,7 +124,11 @@ export class AuthController {
 
   @Get('kakao')
   @UseGuards(KakaoAuthGuard)
-  @ApiOperation({ summary: 'Kakao 로그인 시작' })
+  @ApiOperation({
+    summary: 'Kakao 로그인 시작',
+    description:
+      '프론트엔드는 브라우저를 이 endpoint로 이동시켜 Kakao OAuth flow를 시작합니다.'
+  })
   @ApiFoundResponse({
     description: 'Kakao OAuth consent 화면으로 리다이렉트됩니다.'
   })
@@ -117,7 +142,11 @@ export class AuthController {
 
   @Get('kakao/callback')
   @UseGuards(KakaoAuthGuard)
-  @ApiOperation({ summary: 'Kakao 로그인 콜백' })
+  @ApiOperation({
+    summary: 'Kakao 로그인 콜백',
+    description:
+      'Kakao 인증 완료 후 provider가 호출하는 callback endpoint입니다. 직접 호출하지 말고 `/api/auth/kakao`로 시작해야 합니다.'
+  })
   @ApiOkResponse({
     description: 'Kakao 로그인 성공',
     type: ApiSuccessResponseDto,
@@ -159,6 +188,10 @@ export class AuthController {
     description: 'Kakao 인증 실패',
     type: ApiErrorResponseDto
   })
+  @ApiServiceUnavailableResponse({
+    description: 'OAuth는 성공했지만 사용자 저장을 위한 DB 연결에 실패',
+    type: ApiErrorResponseDto
+  })
   async kakaoCallback(@Req() req: RequestWithContext): Promise<{
     message: string;
     data: { accessToken: string; user: AuthenticatedUser };
@@ -178,8 +211,13 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(BearerAuthGuard)
+  @HttpCode(200)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '로그아웃' })
+  @ApiOperation({
+    summary: '로그아웃',
+    description:
+      '현재 서버 구현은 stateless Bearer 토큰 구조이므로, FE에서 access token을 폐기하는 방식으로 처리합니다.'
+  })
   @ApiOkResponse({
     description: '로그아웃 성공',
     type: ApiSuccessResponseDto
@@ -194,7 +232,10 @@ export class AuthController {
   @Delete('account')
   @UseGuards(BearerAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '회원 탈퇴' })
+  @ApiOperation({
+    summary: '회원 탈퇴',
+    description: '현재 로그인된 사용자의 계정과 연결된 내부 데이터를 삭제합니다.'
+  })
   @ApiOkResponse({
     description: '계정 삭제 성공',
     type: ApiSuccessResponseDto
