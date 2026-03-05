@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
 import { AppLoggerService } from './common/logger/app-logger.service';
 import { HealthController } from './health/health.controller';
+import { StockAnalyzerModule } from './stock-analyzer/modules/stock-analyzer.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true
     }),
-    AuthModule
+    StockAnalyzerModule
   ],
   controllers: [HealthController],
   providers: [AppLoggerService]
