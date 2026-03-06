@@ -27,7 +27,7 @@ export class QuotesController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Fetched quote successfully',
         data: {
           symbol: '005930',
           name_kr: '삼성전자',
@@ -41,8 +41,14 @@ export class QuotesController {
     }
   })
   @ApiNotFoundResponse({ description: '종목을 찾을 수 없음', type: ApiErrorResponseDto })
-  async getQuote(@Param('symbol') symbol: string): Promise<QuoteDto> {
-    return this.quotesService.getQuote(symbol);
+  async getQuote(
+    @Param('symbol') symbol: string
+  ): Promise<{ message: string; data: QuoteDto }> {
+    const quote = await this.quotesService.getQuote(symbol);
+    return {
+      message: 'Fetched quote successfully',
+      data: quote
+    };
   }
 
   @Get()
@@ -55,7 +61,7 @@ export class QuotesController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Fetched batch quotes successfully',
         data: {
           success: [
             {
@@ -74,7 +80,9 @@ export class QuotesController {
     }
   })
   @ApiBadRequestResponse({ description: 'symbols 파라미터 오류', type: ApiErrorResponseDto })
-  async getBatchQuotes(@Query('symbols') symbols: string): Promise<BatchQuoteResponseDto> {
+  async getBatchQuotes(
+    @Query('symbols') symbols: string
+  ): Promise<{ message: string; data: BatchQuoteResponseDto }> {
     if (!symbols) {
       throw new BadRequestException('symbols 파라미터가 필요합니다');
     }
@@ -89,6 +97,10 @@ export class QuotesController {
       throw new BadRequestException('최대 50개까지 조회 가능합니다');
     }
 
-    return this.quotesService.getBatchQuotes(symbolArray);
+    const batchQuotes = await this.quotesService.getBatchQuotes(symbolArray);
+    return {
+      message: 'Fetched batch quotes successfully',
+      data: batchQuotes
+    };
   }
 }

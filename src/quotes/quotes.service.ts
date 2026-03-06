@@ -23,7 +23,7 @@ export class QuotesService implements OnModuleDestroy {
       });
 
       this.redis.on('connect', () => {
-        this.logger.log('Redis connected for Quotes');
+        this.logger.info('Redis connected for Quotes');
       });
 
       this.redis.on('error', (error) => {
@@ -49,14 +49,16 @@ export class QuotesService implements OnModuleDestroy {
   async getQuote(symbol: string): Promise<QuoteDto> {
     const normalizedSymbol = symbol.trim();
 
+    // 먼저 데이터 조회하여 정확한 심볼 얻기
+    const data = this.mockMarketDataService.findBySymbol(normalizedSymbol);
+
+    // Redis 캐시 확인 (정확한 심볼 코드로)
     if (this.redis) {
-      const cachedQuote = await this.getCachedQuote(normalizedSymbol);
+      const cachedQuote = await this.getCachedQuote(data.symbol);
       if (cachedQuote) {
         return cachedQuote;
       }
     }
-
-    const data = this.mockMarketDataService.findBySymbol(normalizedSymbol);
     
     const quote: QuoteDto = {
       symbol: data.symbol,
@@ -95,7 +97,7 @@ export class QuotesService implements OnModuleDestroy {
     }
 
     try {
-      const redisKey = `quote:${symbol.toUpperCase()}`;
+      const redisKey = `quote:${symbol}`;
       const cached = await this.redis.hgetall(redisKey);
       if (!cached.symbol) {
         return null;
