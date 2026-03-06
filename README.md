@@ -1,74 +1,46 @@
-# CAP3 Backend
+# CAP3 Backend - 주식 분석 API
 
 ## Stack
-- NestJS
-- Passport (Google, Kakao)
-- Prisma
-- Neon PostgreSQL
-- Railway
+- NestJS 11
+- PostgreSQL + Prisma
+- Google/Kakao OAuth
+- Swagger (API 문서)
+- Redis (캐싱, 선택사항)
 
-## Required Env
-- `DATABASE_URL` (Neon PostgreSQL connection string)
-- `NODE_ENV` (optional, default: `development`)
-- `APP_BASE_URL` (optional, e.g. `https://api.example.com`)
-- `CORS_ALLOWED_ORIGINS` (optional, comma-separated origins)
-- `AUTH_TOKEN_SECRET`
-- `AUTH_TOKEN_EXPIRES_IN_SEC` (optional, default: `604800`)
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET_KEY`
-- `KAKAO_REST_API_KEY`
-- `KAKAO_CLIENT_SECRET_KEY` (optional, required when Kakao client secret is enabled)
-- `GOOGLE_CALLBACK_URL` (optional, overrides auto-generated callback URL)
-- `KAKAO_CALLBACK_URL` (optional, overrides auto-generated callback URL)
-- `PORT` (Railway provides this automatically)
-
-## Run
+## Setup
 ```bash
 pnpm install
 pnpm prisma:generate
 npx prisma db push
-pnpm run lint
-pnpm run check
-pnpm run build
+```
+
+## Run
+```bash
 pnpm run start:dev
 ```
 
-## Railway Deploy
-1. Railway에서 이 GitHub 저장소를 연결하거나 `railway up`으로 서비스에 연결합니다.
-2. 서비스 설정에 public domain을 생성합니다.
-3. Railway Variables에 최소 아래 값을 설정합니다.
-   - `DATABASE_URL`
-   - `AUTH_TOKEN_SECRET`
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET_KEY`
-   - `KAKAO_REST_API_KEY`
-   - `KAKAO_CLIENT_SECRET_KEY` (사용 시)
-   - `CORS_ALLOWED_ORIGINS`
-4. `APP_BASE_URL`은 선택 사항입니다. 없으면 앱이 Railway의 `RAILWAY_PUBLIC_DOMAIN`을 사용해 Swagger/OAuth callback URL을 계산합니다.
-5. Google/Kakao OAuth 콘솔 redirect URI를 실제 Railway 도메인 기준으로 등록합니다.
-   - `https://<your-domain>/api/auth/google/callback`
-   - `https://<your-domain>/api/auth/kakao/callback`
-6. 배포 후 아래 URL로 확인합니다.
-   - Swagger UI: `https://<your-domain>/api/docs`
-   - OpenAPI JSON: `https://<your-domain>/api/docs-json`
-   - Health: `https://<your-domain>/api/health`
-   - Readiness: `https://<your-domain>/api/health/ready`
+## Env
+필수:
+- `DATABASE_URL` - PostgreSQL 연결
+- `AUTH_TOKEN_SECRET` - Bearer 토큰 서명키
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET_KEY` - Google OAuth
+- `KAKAO_REST_API_KEY` - Kakao OAuth
 
-## DB Model (ERD)
-- `users` table (`prisma/schema.prisma`)
-  - `id` (UUID, PK)
-  - `provider` (GOOGLE, KAKAO)
-  - `provider_id`
-  - `email`
-  - `nickname`
-  - `name`
-  - `given_name`
-  - `family_name`
-  - `picture`
-  - `locale`
-  - `email_verified`
-  - `profile` (JSON)
-  - `last_login_at`
-  - `created_at`
-  - `updated_at`
-  - unique: `(provider, provider_id)`
+선택:
+- `REDIS_URL` - 시세 캐싱용
+- `CORS_ALLOWED_ORIGINS` - CORS 설정 (기본: `http://localhost:3000`)
+
+## API
+- **Instruments**: 종목 검색, 자동완성, 마스터 정보
+- **Quotes**: 시세 조회 (단일/배치)
+- **Analytics**: 52주 구간 내 가격 위치 분석
+- **Auth**: Google/Kakao OAuth, Bearer 토큰
+- **Users**: 사용자 정보
+- **SearchHistory**: 검색 이력 관리
+- **Watchlist, Alerts, Notifications**: 추가 기능
+
+## Docs
+```
+localhost:8080/api/docs - Swagger UI
+localhost:8080/api/docs-json - OpenAPI JSON
+```

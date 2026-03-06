@@ -11,6 +11,9 @@ import { SearchHistoryModule } from './search-history/search-history.module';
 import { StatsModule } from './stats/stats.module';
 import { UsersModule } from './users/users.module';
 import { WatchlistModule } from './watchlist/watchlist.module';
+import { InstrumentsModule } from './instruments/instruments.module';
+import { QuotesModule } from './quotes/quotes.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -25,7 +28,10 @@ import { WatchlistModule } from './watchlist/watchlist.module';
     WatchlistModule,
     AlertsModule,
     NotificationsModule,
-    StatsModule
+    StatsModule,
+    InstrumentsModule,
+    QuotesModule,
+    AnalyticsModule
   ],
   controllers: [HealthController],
   providers: [AppLoggerService]
