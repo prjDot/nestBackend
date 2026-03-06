@@ -8,7 +8,6 @@ import {
 } from '@nestjs/swagger';
 import { ApiErrorResponseDto, ApiSuccessResponseDto } from '../common/dto/api-response.dto';
 import { AnalyticsService } from './analytics.service';
-import { PricePositionDto } from './dto/price-position.dto';
 
 @ApiTags('Analytics')
 @Controller('analytics')
@@ -25,7 +24,7 @@ export class AnalyticsController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Price position fetched successfully',
         data: {
           symbol: '005930',
           name_kr: '삼성전자',
@@ -40,7 +39,13 @@ export class AnalyticsController {
     }
   })
   @ApiNotFoundResponse({ description: '종목을 찾을 수 없음', type: ApiErrorResponseDto })
-  async getPricePosition(@Param('symbol') symbol: string): Promise<PricePositionDto> {
-    return this.analyticsService.getPricePosition(symbol);
+  async getPricePosition(
+    @Param('symbol') symbol: string
+  ): Promise<{ message: string; data: unknown }> {
+    const data = await this.analyticsService.getPricePosition(symbol);
+    return {
+      message: 'Price position fetched successfully',
+      data
+    };
   }
 }
