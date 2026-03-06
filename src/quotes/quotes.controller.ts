@@ -74,7 +74,7 @@ export class QuotesController {
     }
   })
   @ApiBadRequestResponse({ description: 'symbols 파라미터 오류', type: ApiErrorResponseDto })
-  async getBatchQuotes(@Query('symbols') symbols: string): Promise<BatchQuoteResponseDto> {
+  async getBatchQuotes(@Query('symbols') symbols: string): Promise<{ message: string; data: BatchQuoteResponseDto }> {
     if (!symbols) {
       throw new BadRequestException('symbols 파라미터가 필요합니다');
     }
@@ -89,6 +89,7 @@ export class QuotesController {
       throw new BadRequestException('최대 50개까지 조회 가능합니다');
     }
 
-    return this.quotesService.getBatchQuotes(symbolArray);
+    const data = await this.quotesService.getBatchQuotes(symbolArray);
+    return { message: 'Batch quotes retrieved successfully', data };
   }
 }
