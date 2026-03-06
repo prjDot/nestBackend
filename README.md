@@ -101,7 +101,16 @@ pnpm run format
    - Swagger UI: `https://<your-domain>/api/docs`
    - Health: `https://<your-domain>/api/health`
 
+<<<<<<< HEAD
 ## API Documentation
+=======
+- [ ] Redis 실제 연동 (캐싱)
+- [ ] 알림 기능 (24시간 중복 방지)
+- [ ] 위시리스트 기능
+- [ ] 사용자 인증 시스템
+- [ ] NeonDB PostgreSQL 통합
+- [ ] 히스토리 및 차트 데이터
+>>>>>>> 7dcfa2c37a6c46071d29964304c34f96e0b20938
 
 Swagger UI: http://localhost:8080/api/docs
 
