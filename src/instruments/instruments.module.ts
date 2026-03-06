@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
+import { CommonServicesModule } from '../common/services/common-services.module';
 import { InstrumentsController } from './instruments.controller';
 import { InstrumentsService } from './instruments.service';
-import { MockMarketDataService } from '../common/services/mock-market-data.service';
 
 @Module({
+  imports: [CommonServicesModule],
   controllers: [InstrumentsController],
-  providers: [InstrumentsService, MockMarketDataService],
+  providers: [InstrumentsService],
   exports: [InstrumentsService]
 })
 export class InstrumentsModule {}

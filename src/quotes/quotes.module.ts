@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
+import { CommonServicesModule } from '../common/services/common-services.module';
+import { AppLoggerService } from '../common/logger/app-logger.service';
 import { QuotesController } from './quotes.controller';
 import { QuotesService } from './quotes.service';
-import { MockMarketDataService } from '../common/services/mock-market-data.service';
-import { AppLoggerService } from '../common/logger/app-logger.service';
 
 @Module({
+  imports: [CommonServicesModule],
   controllers: [QuotesController],
-  providers: [QuotesService, MockMarketDataService, AppLoggerService],
+  providers: [QuotesService, AppLoggerService],
   exports: [QuotesService]
 })
 export class QuotesModule {}
