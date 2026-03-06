@@ -9,9 +9,11 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SearchHistoryModule } from './search-history/search-history.module';
 import { StatsModule } from './stats/stats.module';
-import { StockAnalyzerModule } from './stock-analyzer/modules/stock-analyzer.module';
 import { UsersModule } from './users/users.module';
 import { WatchlistModule } from './watchlist/watchlist.module';
+import { InstrumentsModule } from './instruments/instruments.module';
+import { QuotesModule } from './quotes/quotes.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { WatchlistModule } from './watchlist/watchlist.module';
     AlertsModule,
     NotificationsModule,
     StatsModule,
-    StockAnalyzerModule
+    InstrumentsModule,
+    QuotesModule,
+    AnalyticsModule
   ],
   controllers: [HealthController],
   providers: [AppLoggerService]
