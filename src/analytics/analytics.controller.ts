@@ -25,7 +25,7 @@ export class AnalyticsController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Fetched price position successfully',
         data: {
           symbol: '005930',
           name_kr: '삼성전자',
@@ -40,7 +40,13 @@ export class AnalyticsController {
     }
   })
   @ApiNotFoundResponse({ description: '종목을 찾을 수 없음', type: ApiErrorResponseDto })
-  async getPricePosition(@Param('symbol') symbol: string): Promise<PricePositionDto> {
-    return this.analyticsService.getPricePosition(symbol);
+  async getPricePosition(
+    @Param('symbol') symbol: string
+  ): Promise<{ message: string; data: PricePositionDto }> {
+    const pricePosition = await this.analyticsService.getPricePosition(symbol);
+    return {
+      message: 'Fetched price position successfully',
+      data: pricePosition
+    };
   }
 }

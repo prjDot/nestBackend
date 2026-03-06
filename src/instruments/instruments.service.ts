@@ -11,6 +11,10 @@ export class InstrumentsService {
       throw new BadRequestException('검색어를 입력해주세요');
     }
 
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+      throw new BadRequestException('limit은 1 이상 50 이하의 정수여야 합니다');
+    }
+
     const results = this.mockMarketDataService.search(query, limit);
     return results.map((item) => ({
       symbol: item.symbol,

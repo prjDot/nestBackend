@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -28,7 +35,7 @@ export class InstrumentsController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Fetched instruments successfully',
         data: [
           { symbol: '005930', name_kr: '삼성전자', market: 'KR' },
           { symbol: '000660', name_kr: 'SK하이닉스', market: 'KR' }
@@ -40,9 +47,13 @@ export class InstrumentsController {
   @ApiBadRequestResponse({ description: '잘못된 검색어', type: ApiErrorResponseDto })
   async search(
     @Query('q') query: string,
-    @Query('limit') limit?: number
-  ): Promise<InstrumentDto[]> {
-    return this.instrumentsService.search(query, limit);
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ): Promise<{ message: string; data: InstrumentDto[] }> {
+    const instruments = await this.instrumentsService.search(query, limit);
+    return {
+      message: 'Fetched instruments successfully',
+      data: instruments
+    };
   }
 
   @Get('autocomplete')
@@ -55,15 +66,21 @@ export class InstrumentsController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Fetched autocomplete successfully',
         data: [{ symbol: '005930', name_kr: '삼성전자', market: 'KR' }],
         meta: { requestId: 'req_01hqx8m3f', timestamp: '2026-03-06T09:10:00Z' }
       }
     }
   })
   @ApiBadRequestResponse({ description: '검색어는 최소 2자 이상', type: ApiErrorResponseDto })
-  async autocomplete(@Query('q') query: string): Promise<InstrumentDto[]> {
-    return this.instrumentsService.autocomplete(query);
+  async autocomplete(
+    @Query('q') query: string
+  ): Promise<{ message: string; data: InstrumentDto[] }> {
+    const autocomplete = await this.instrumentsService.autocomplete(query);
+    return {
+      message: 'Fetched autocomplete successfully',
+      data: autocomplete
+    };
   }
 
   @Get(':symbol')
@@ -76,7 +93,7 @@ export class InstrumentsController {
       example: {
         ok: true,
         status: 200,
-        message: 'Request successful',
+        message: 'Fetched instrument successfully',
         data: {
           symbol: '005930',
           name_kr: '삼성전자',
@@ -88,7 +105,13 @@ export class InstrumentsController {
     }
   })
   @ApiNotFoundResponse({ description: '종목을 찾을 수 없음', type: ApiErrorResponseDto })
-  async getInstrument(@Param('symbol') symbol: string): Promise<InstrumentDetailDto> {
-    return this.instrumentsService.getInstrument(symbol);
+  async getInstrument(
+    @Param('symbol') symbol: string
+  ): Promise<{ message: string; data: InstrumentDetailDto }> {
+    const instrument = await this.instrumentsService.getInstrument(symbol);
+    return {
+      message: 'Fetched instrument successfully',
+      data: instrument
+    };
   }
 }

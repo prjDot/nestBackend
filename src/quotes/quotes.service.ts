@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { MockMarketDataService } from '../common/services/mock-market-data.service';
@@ -6,7 +6,7 @@ import { AppLoggerService } from '../common/logger/app-logger.service';
 import { QuoteDto, BatchQuoteResponseDto } from './dto/quote.dto';
 
 @Injectable()
-export class QuotesService {
+export class QuotesService implements OnModuleDestroy {
   private redis: Redis | null = null;
 
   constructor(
@@ -16,28 +16,47 @@ export class QuotesService {
   ) {
     const redisUrl = this.configService.get<string>('REDIS_URL');
     if (redisUrl) {
-      try {
-        this.redis = new Redis(redisUrl, {
-          maxRetriesPerRequest: 1,
-          enableOfflineQueue: false,
-          retryStrategy: () => null
-        });
+      this.redis = new Redis(redisUrl, {
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+        retryStrategy: () => null
+      });
 
-        this.redis.on('connect', () => {
-          this.logger.log('Redis connected for Quotes');
-        });
+      this.redis.on('connect', () => {
+        this.logger.log('Redis connected for Quotes');
+      });
 
-        this.redis.on('error', (error) => {
-          this.logger.warn(`Redis unavailable. Using without cache. (${error.message})`);
-        });
-      } catch (err) {
-        this.logger.warn('Redis connection failed. Using without cache.');
-      }
+      this.redis.on('error', (error) => {
+        this.logger.warn(`Redis unavailable. Using without cache. (${error.message})`);
+      });
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (!this.redis) {
+      return;
+    }
+
+    try {
+      await this.redis.quit();
+    } catch {
+      this.redis.disconnect();
+    } finally {
+      this.redis = null;
     }
   }
 
   async getQuote(symbol: string): Promise<QuoteDto> {
-    const data = this.mockMarketDataService.findBySymbol(symbol);
+    const normalizedSymbol = symbol.trim();
+
+    if (this.redis) {
+      const cachedQuote = await this.getCachedQuote(normalizedSymbol);
+      if (cachedQuote) {
+        return cachedQuote;
+      }
+    }
+
+    const data = this.mockMarketDataService.findBySymbol(normalizedSymbol);
     
     const quote: QuoteDto = {
       symbol: data.symbol,
@@ -52,7 +71,7 @@ export class QuotesService {
     if (this.redis) {
       try {
         const redisKey = `quote:${data.symbol}`;
-        await this.redis.hmset(redisKey, {
+        await this.redis.hset(redisKey, {
           symbol: quote.symbol,
           name_kr: quote.name_kr,
           price: quote.price.toString(),
@@ -68,6 +87,33 @@ export class QuotesService {
     }
 
     return quote;
+  }
+
+  private async getCachedQuote(symbol: string): Promise<QuoteDto | null> {
+    if (!this.redis) {
+      return null;
+    }
+
+    try {
+      const redisKey = `quote:${symbol.toUpperCase()}`;
+      const cached = await this.redis.hgetall(redisKey);
+      if (!cached.symbol) {
+        return null;
+      }
+
+      return {
+        symbol: cached.symbol,
+        name_kr: cached.name_kr,
+        price: Number(cached.price),
+        low_52w: Number(cached.low_52w),
+        high_52w: Number(cached.high_52w),
+        updated_at: cached.updated_at
+      };
+    } catch (err) {
+      const error = err as Error;
+      this.logger.warn(`Redis read failed: ${error.message}`);
+      return null;
+    }
   }
 
   async getBatchQuotes(symbols: string[]): Promise<BatchQuoteResponseDto> {
