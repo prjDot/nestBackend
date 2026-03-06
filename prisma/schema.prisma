@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  GOOGLE
+  KAKAO
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+enum AlertType {
+  TARGET
+  RISE
+  FALL
+  RANGE
+}
+
+enum NotificationStatus {
+  SENT
+  DELIVERED
+  OPENED
+  FAILED
+}
+
+model User {
+  id            String       @id @default(uuid()) @db.Uuid // Essential
+  provider      AuthProvider //Google | Kakao
+  providerId    String       @map("provider_id") // Essential
+  email         String? // Essential
+  name          String // Essential
+  nickname      String?
+  givenName     String?      @map("given_name")
+  familyName    String?      @map("family_name")
+  picture       String? // Google Profile IMG | Kakao Profile IMG - Optional
+  locale        String?
+  theme         String       @default("system")
+  notificationEnabled Boolean @default(true) @map("notification_enabled")
+  emailVerified Boolean      @default(false) @map("email_verified")
+  profile       Json // Essential
+  lastLoginAt   DateTime     @default(now()) @map("last_login_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  devices          Device[]
+  searchHistories  SearchHistory[]
+  watchlistItems   WatchlistItem[]
+  alerts           PriceAlert[]
+  notificationLogs NotificationLog[]
+
+  @@unique([provider, providerId], map: "users_provider_provider_id_key")
+  @@index([email], map: "users_email_idx")
+  @@index([provider], map: "users_provider_idx")
+  @@map("users")
+}
+
+model Device {
+  id                  String         @id @default(uuid()) @db.Uuid
+  userId              String         @map("user_id") @db.Uuid
+  deviceToken         String         @map("device_token")
+  platform            DevicePlatform
+  notificationEnabled Boolean        @default(true) @map("notification_enabled")
+  locale              String?
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceToken], map: "devices_user_id_device_token_key")
+  @@index([userId], map: "devices_user_id_idx")
+  @@map("devices")
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  symbol    String
+  query     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt], map: "search_history_user_id_created_at_idx")
+  @@map("search_history")
+}
+
+model WatchlistItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  symbol      String
+  addedAt     DateTime @default(now()) @map("added_at")
+  customOrder Int?     @map("custom_order")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol], map: "watchlist_items_user_id_symbol_key")
+  @@index([userId, addedAt], map: "watchlist_items_user_id_added_at_idx")
+  @@map("watchlist_items")
+}
+
+model PriceAlert {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  symbol          String
+  alertType       AlertType @map("alert_type")
+  targetPrice     Decimal?  @db.Decimal(18, 4) @map("target_price")
+  changeRate      Decimal?  @db.Decimal(10, 4) @map("change_rate")
+  rangeMin        Decimal?  @db.Decimal(18, 4) @map("range_min")
+  rangeMax        Decimal?  @db.Decimal(18, 4) @map("range_max")
+  isActive        Boolean   @default(true) @map("is_active")
+  triggerCount    Int       @default(0) @map("trigger_count")
+  lastTriggeredAt DateTime? @map("last_triggered_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationLogs NotificationLog[]
+
+  @@index([userId, isActive], map: "price_alerts_user_id_is_active_idx")
+  @@index([userId, symbol], map: "price_alerts_user_id_symbol_idx")
+  @@map("price_alerts")
+}
+
+model NotificationLog {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @map("user_id") @db.Uuid
+  alertId   String?            @map("alert_id") @db.Uuid
+  symbol    String?
+  title     String
+  body      String
+  deepLink  String?            @map("deep_link")
+  status    NotificationStatus @default(SENT)
+  readAt    DateTime?          @map("read_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alert PriceAlert? @relation(fields: [alertId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt], map: "notification_logs_user_id_created_at_idx")
+  @@index([userId, readAt], map: "notification_logs_user_id_read_at_idx")
+  @@map("notification_logs")
+}

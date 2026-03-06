@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { STATUS_ERROR_CODE_MAP } from '../constants/error-codes';
+import { AppLoggerService } from '../logger/app-logger.service';
 import type { RequestWithContext } from '../types/request-with-context.interface';
 
 interface ResolvedError {
@@ -18,11 +19,14 @@ interface ResolvedError {
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  constructor(private readonly logger?: AppLoggerService) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
     const response = http.getResponse<Response>();
     const request = http.getRequest<RequestWithContext>();
     const resolved = this.resolveError(exception);
+    this.logException(request, exception, resolved);
 
     response.status(resolved.status).json({
       ok: false,
@@ -37,6 +41,29 @@ export class ApiExceptionFilter implements ExceptionFilter {
         timestamp: new Date().toISOString()
       }
     });
+  }
+
+  private logException(
+    request: RequestWithContext,
+    exception: unknown,
+    resolved: ResolvedError
+  ): void {
+    if (!this.logger) {
+      return;
+    }
+
+    const requestId = request.requestId ?? 'req_unknown';
+    const message =
+      `${request.method} ${request.originalUrl} ${resolved.status} ` +
+      `requestId=${requestId} code=${resolved.code}`;
+
+    if (resolved.status >= 500) {
+      const trace = exception instanceof Error ? exception.stack : undefined;
+      this.logger.error(message, trace, 'Exception');
+      return;
+    }
+
+    this.logger.warn(message, 'Exception');
   }
 
   private resolveError(exception: unknown): ResolvedError {
@@ -126,6 +153,8 @@ export class ApiExceptionFilter implements ExceptionFilter {
         return '리소스 충돌';
       case HttpStatus.TOO_MANY_REQUESTS:
         return '요청 제한 초과';
+      case HttpStatus.SERVICE_UNAVAILABLE:
+        return '서비스를 일시적으로 사용할 수 없습니다';
       default:
         return '서버 내부 오류';
     }

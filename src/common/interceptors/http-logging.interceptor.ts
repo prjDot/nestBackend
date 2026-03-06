@@ -1,6 +1,8 @@
 import {
   CallHandler,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
   NestInterceptor
 } from '@nestjs/common';
@@ -29,19 +31,8 @@ export class HttpLoggingInterceptor implements NestInterceptor {
           this.logByStatus(request, response.statusCode, startedAt);
         },
         error: (error: unknown) => {
-          const durationMs = Date.now() - startedAt;
-          const message = this.formatMessage(
-            request,
-            response.statusCode,
-            durationMs
-          );
-
-          if (error instanceof Error) {
-            this.logger.error(message, error.stack, 'HTTP');
-            return;
-          }
-
-          this.logger.error(message, undefined, 'HTTP');
+          const statusCode = resolveStatusCode(error);
+          this.logByStatus(request, statusCode, startedAt);
         }
       })
     );
@@ -76,4 +67,12 @@ export class HttpLoggingInterceptor implements NestInterceptor {
     const requestId = request.requestId ?? 'req_unknown';
     return `${request.method} ${request.originalUrl} ${statusCode} ${durationMs}ms requestId=${requestId}`;
   }
+}
+
+function resolveStatusCode(error: unknown): number {
+  if (error instanceof HttpException) {
+    return error.getStatus();
+  }
+
+  return HttpStatus.INTERNAL_SERVER_ERROR;
 }
